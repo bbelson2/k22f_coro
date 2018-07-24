@@ -41,17 +41,35 @@ Build the new project.
 
 A new header file `experimental/coroutine.h` is added: this provides a minimal implementation of N4680. A resumable object class `resumable` is added, in `resumable.h`.
 
+# Coroutine instances
+
+A variable number of resumable coroutine instances were added to the project, along with caller functions. Additionally, the callers and the coroutines were varied in content size, so that the costs of the following could be calculated:
+
+- coroutine infrastructure
+- coroutine instance
+- coroutine calls  
+
+The various code blocks were included and excluded by a single control macro, `TEST_CONTROL`, whose numeric value controlled the inclusions. To prevent the removal of unused code by the optimiser, all included callers were invoked from a shell function `call_tests()`. 
+
 # Code size
 
-## Method
+## Data
+
+TEST_CONTROL | Infrastructure | couroutines | callers | text | data | bss | dec | hex
+--- | --- | --- | --- | --- | --- | --- | --- | --- 
+0 | 0 | 0 | 0 | 11100 | 140 | 1236 | 12476 | 30bc
+1 | 1 | 1 | 1 | 17348 | 144 | 1256 | 18748 | 493c
+2 | 1 | 2 | 2 | 18444 | 144 | 1256 | 19844 | 4d84
+3 | 1 | 3 | 3 | 19528 | 144 | 1256 | 20928 | 51c0
+4 | 1 | 3 | 5 | 19640 | 144 | 1256 | 21040 | 5230
+5 | 1 | 3+1 | 5+1 | 20736 | 144 | 1256 | 22136 | 5678
 
 ## Results
 
-Infrastructure | couroutines | callers | text | data | bss | dec | hex
---- | --- | --- | --- | --- | --- | --- | --- 
-0 | 0 | 0 | 11128 | 140	| 1236 | 12504 | 30d8
-1 | 1 | 1 | 17344 | 144	| 1256 | 18744 | 4938
-1 | 2 | 2 | 17384 | 144 | 1256 | 18784 | 4960
-1 | 3 | 3 | 17420 | 144 | 1256 | 18820 | 4984
-1 | 3 | 5 | 17420 | 144 | 1256 | 18820 | 4984
+A preliminary analysis points towards code size costs which are equal to or less than the following:
 
+Item | Bytes
+--- | ---
+Infrastructure | 5176
+Resumable coroutine | 
+Invocation of coroutine |

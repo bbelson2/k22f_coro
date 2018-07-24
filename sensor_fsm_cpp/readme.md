@@ -107,30 +107,11 @@ Term1_SendStr((void*)"Fatal error: Calibration failed\r\n");
 4. Build configuration => DebugLLVM
 5. C/C++ Application => DebugLLVM/sensor_fsm_cpp.elf
 
-# Results
+# Code size
 
-## GCC
+Build | text | data | bss | dec | hex
+--- | --- | --- | --- | --- | --- 
+GCC | 10888 | 140 | 1232 | 12260 | 2fe4
+clang without "-fcoroutines-ts" | 11128 | 140 | 1236 | 12504 | 30d8
+clang with "-fcoroutines-ts" | 11128 | 140 | 1236 | 12504 | 30d8
 
-01:30:26 **** Incremental Build of configuration Debug for project sensor_fsm_base ****
-make all 
-Invoking: Cross ARM GNU Print Size
-arm-none-eabi-size --format=berkeley "sensor_fsm_base.elf"
-   text	   data	    bss	    dec	    hex	filename
-  10888	    140	   1232	  12260	   2fe4	sensor_fsm_base.elf
-
-## clang 
-
-01:32:59 **** Incremental Build of configuration DebugLLVM for project sensor_fsm_cpp ****
-make all 
-Invoking: Cross ARM GNU Print Size
-arm-none-eabi-size --format=berkeley "sensor_fsm_cpp.elf"
-   text	   data	    bss	    dec	    hex	filename
-  11128	    140	   1236	  12504	   30d8	sensor_fsm_cpp.elf
-Finished building: sensor_fsm_cpp.siz
-
-## clang without "-fcoroutines-ts":
-
-Invoking: Cross ARM GNU Print Size
-arm-none-eabi-size --format=berkeley "sensor_fsm_cpp.elf"
-   text	   data	    bss	    dec	    hex	filename
-  11128	    140	   1236	  12504	   30d8	sensor_fsm_cpp.elf
