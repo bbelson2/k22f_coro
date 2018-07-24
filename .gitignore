@@ -30,3 +30,10 @@
 *.exe
 *.out
 *.app
+
+# Build folders
+*/Generated_Code/*
+*/Debug/*
+*/DebugLLVM/*
+*/DebugLLVMNoCoro/*
+
