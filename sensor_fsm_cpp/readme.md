@@ -30,6 +30,8 @@ Add a project specific line in the first state of `fsm_execute()` to check that 
 
 Build the new project. 
 
+The **build all** command appears to be rebuilding all files regardless of whether they are up to date. See https://mcuoneclipse.com/2015/06/06/eclipse-project-refresh-policy-broken-incremental-build-with-external-make/. As discussed there, change the ***Properties > Settings > C/C++ Build > Refresh policy***, removing the original resource, and adding this. (This step should be part of the project clone process.)
+
 ## Debug
 
 1. Debug Configurations > GDB PEMicro Interface Debugging > right-click > New
@@ -44,7 +46,7 @@ If necessary, restart Kinetic Studio with clang in the PATH, e.g.:
 
 ```
 set PATH=E:\llvm-trunk\install\bin;%PATH%
-E:\Freescale\KDS_v3\eclipse\kinetis-design-studio.exe -showlocation
+E:\Freescale\KDS_v3\eclipse\kinetis-design-studio.exe -data E:\Source\K22F
 ```
 
 Create a project configuration which uses clang as a compiler in place of gcc. (We will also set the C++ compiler settings so that they will be copied into any projects cloned from this.)

@@ -212,7 +212,7 @@ void report_value(word value) {
  * 5: 3 coroutines + 1 with 2x internals; 5 callers + 1 with 2x internals
  */
 
-#define TEST_CONTROL 5
+#define TEST_CONTROL 0
 
 #if TEST_CONTROL >= 1
 
@@ -307,25 +307,35 @@ void test_coro3_2() {
 
 resumable fsm_coro4() {
 	Term1_SendStr((void*)"coro4(): called\r\n");
-	for (unsigned i = 1;; i++) {
+	for (unsigned i = 2; i < 5; i++) {
 		co_await std::experimental::suspend_always { };
 		Term1_SendStr((void*)"coro4(): resumed (#");
 		Term1_SendNum(i);
 		Term1_SendStr((void*)")\r\n");
 	}
 	Term1_SendStr((void*)"coro4(): called\r\n");
-	for (unsigned i = 1;; i++) {
-		co_await std::experimental::suspend_always { };
-		Term1_SendStr((void*)"coro4(): resumed (#");
+	for (unsigned i = 1; i < 6; i++) {
+		//co_await std::experimental::suspend_always { };
+		Term1_SendStr((void*)"Coro4(): Resumed (#");
 		Term1_SendNum(i);
 		Term1_SendStr((void*)")\r\n");
 	}
 }
 
+#endif
+
+#if TEST_CONTROL >= 6
+
 void test_coro4() {
+	int j = 0;
 	auto coro = fsm_coro4();
 	for (int i = 0; i < 5; i++) {
 		coro.resume();
+	}
+	//auto coro2 = fsm_coro4();
+	for (int i = 0; i < 8; i++) {
+		//coro2.resume();
+		j += i;
 	}
 }
 
@@ -346,6 +356,9 @@ void call_tests() {
 	test_coro3_2();
 #endif
 #if TEST_CONTROL >= 5
+	fsm_coro4();
+#endif
+#if TEST_CONTROL >= 6
 	test_coro4();
 #endif
 }
