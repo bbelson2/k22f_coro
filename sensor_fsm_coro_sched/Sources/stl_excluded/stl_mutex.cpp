@@ -8,9 +8,11 @@
 #include <stl_mutex.h>
 
 namespace std {
-
+/*
 constexpr mutex::mutex() _NOEXCEPT {
 }
+*/
+mutex::mutex() {}
 
 mutex::~mutex() {
 }

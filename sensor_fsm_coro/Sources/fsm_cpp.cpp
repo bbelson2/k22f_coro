@@ -212,7 +212,7 @@ void report_value(word value) {
  * 5: 3 coroutines + 1 with 2x internals; 5 callers + 1 with 2x internals
  */
 
-#define TEST_CONTROL 0
+#define TEST_CONTROL 6
 
 #if TEST_CONTROL >= 1
 

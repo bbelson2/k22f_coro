@@ -2,7 +2,7 @@
  * awaitable.h
  *
  *  Created on: 7 Aug 2018
- *      Author: belsonba
+ *      Author: Bruce Belson
  */
 
 #ifndef SOURCES_AWAITABLE_H_

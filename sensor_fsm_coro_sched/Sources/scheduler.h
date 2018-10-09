@@ -14,8 +14,135 @@ extern "C" {
 }
 #endif
 
+//#define CORO_HANDLE std::experimental::coroutine_handle
+
+#define STE std::experimental
+#include <cppcommon.h>
+#include <experimental/coroutine.h>
 
 namespace scheduling {
+
+/**
+ * ufuture
+ */
+
+enum ufuture_error_code {
+	none = 0,
+	no_state,
+	future_already_retrieved,
+};
+
+template<class T, class E>
+class ufuture;
+
+template<class T, class E>
+class ushared_state
+{
+public:
+	ushared_state() : result_(T()), error_(E()), is_ready_(false), is_retrieved_(false), is_running_(false) { }
+
+	bool is_ready() const { return is_ready_; }
+	bool is_retrieved() const { return is_retrieved_; }
+	bool is_running() const { return is_running_; }
+
+	const T& get() const { return result_; }
+	bool has_error() const { return error_ != E(); }
+
+	void set(T&& data) { result_ = data; }
+	void set(const T& data) { result_ = data; }
+	void set(T data) { result_ = data; }
+
+	void set_error(E&& error) { error_ = error; }
+	void set_error(const E& error) { error_ = error; }
+	void set_error(E error) { error_ = error; }
+private:
+	T result_;
+	E error_;
+	bool is_ready_;
+	bool is_retrieved_;
+	bool is_running_;
+};
+
+template<class T, class E>
+class upromise
+{
+public:
+	upromise();
+	upromise(upromise&& rhs) noexcept;
+	upromise(const upromise& rhs) = delete;
+
+	upromise& operator=(upromise&& rhs) noexcept;
+	upromise& operator=(const upromise& rhs) = delete;
+	void swap(upromise& other) noexcept;
+
+
+	ufuture<T, E> get_future();
+	/*
+	ufuture<T, E> get_future() {
+		if (!state_) {
+			// ISO contract says to throw no_state
+		}
+		else {
+			if (is_retrieved_) {
+				// ISO contract says to throw future_already_retrieved
+			}
+			else {
+				is_retrieved_ = true;
+				return ufuture<T, E>(get_state_for_future());
+			}
+		}
+	}
+	*/
+
+	void set_value(const T& t) { get_state_for_set()->set_value(t); }
+	void set_value(T&& t) { get_state_for_set()->set_value(t); }
+
+	void set_error(E&& error);
+	void set_error(const E& error);
+	void set_error(E error);
+protected:
+	ushared_state<T, E>* get_state_for_future();
+	ushared_state<T, E>* get_state_for_set();
+private:
+	ushared_state<T, E> *state_;
+};
+
+template<class T, class E>
+class ufuture
+{
+public:
+	ufuture() noexcept;
+	ufuture(ufuture&& rhs) noexcept;
+	ufuture(const ufuture& rhs) = delete;
+	~ufuture();
+	ufuture& operator=(const ufuture& rhs) = delete;
+	ufuture& operator=(ufuture&&) noexcept;
+
+	T get();
+
+	bool valid();
+
+	void wait() const;
+	// timers TODO
+
+	// Coroutine
+	struct promise_type {
+		ufuture<T, E> get_return_object() {
+			return ufuture<T, E>(
+					STE::coroutine_handle < promise_type > ::from_promise(*this));
+		}
+		auto initial_suspend() {
+			return STE::suspend_never { };
+		}
+		auto final_suspend() {
+			return STE::suspend_never { };
+		}
+		void return_void() {
+		}
+		void unhandled_exception() {}
+	};
+};
+
 
 /**
  * Task primitive types

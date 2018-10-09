@@ -215,6 +215,7 @@ template<class R>
 	class future_shared_state {
 	public:
 		constexpr future_shared_state() _NOEXCEPT
+		: mtx_()
 		{
 		}
 		//future_shared_state()

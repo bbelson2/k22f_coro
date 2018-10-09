@@ -112,7 +112,7 @@ inline namespace coroutines_v1 {
 
 #pragma once
 
-#include <stlcommon.h>
+#include <cppcommon.h>
 
 namespace std { namespace experimental { inline namespace coroutines_v1 {
 
@@ -166,19 +166,19 @@ template <typename Promise> struct coroutine_handle : coroutine_handle<> {
   }
 };
 
-  template <typename _PromiseT>
-  bool operator==(coroutine_handle<_PromiseT> const& _Left,
-    coroutine_handle<_PromiseT> const& _Right) noexcept
-  {
-    return _Left.address() == _Right.address();
-  }
+template <typename _PromiseT>
+	bool operator==(coroutine_handle<_PromiseT> const& _Left,
+			coroutine_handle<_PromiseT> const& _Right) noexcept
+	{
+		return _Left.address() == _Right.address();
+	}
 
-  template <typename _PromiseT>
-  bool operator!=(coroutine_handle<_PromiseT> const& _Left,
-    coroutine_handle<_PromiseT> const& _Right) noexcept
-  {
-    return !(_Left == _Right);
-  }
+template <typename _PromiseT>
+	bool operator!=(coroutine_handle<_PromiseT> const& _Left,
+			coroutine_handle<_PromiseT> const& _Right) noexcept
+	{
+		return !(_Left == _Right);
+	}
 
 struct suspend_always {
   bool await_ready() { return false; }

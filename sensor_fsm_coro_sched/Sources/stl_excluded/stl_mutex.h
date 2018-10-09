@@ -38,7 +38,8 @@ namespace std {
 namespace std {
 	class mutex {
 	public:
-		constexpr mutex() _NOEXCEPT;
+		//constexpr mutex() _NOEXCEPT;
+		mutex();
 		~mutex();
 		mutex(const mutex&) = delete;
 		mutex& operator=(const mutex&) = delete;

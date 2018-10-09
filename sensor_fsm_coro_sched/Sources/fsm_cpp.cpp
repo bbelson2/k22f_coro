@@ -18,6 +18,7 @@ extern "C" {
 #include "PE_Types.h"
 #include <stdbool.h>
 #include "fsm.h"
+#include "app_events.h"
 
 // Scheduler task adapter
 
@@ -29,6 +30,12 @@ void sensor_taskfn(scheduling::task_control_block_t* t) {
 	else {
 		t->setState(scheduling::task_state_t::TASK_READY);
 	}
+}
+
+extern "C" void fsm_reg_callbacks() {
+	app_event_reg_isr(APP_EVENT_TI1, fsm_handle_timer_interrupt);
+	app_event_reg_isr(APP_EVENT_AD1_CALIBRATED, fsm_handle_calibration_complete);
+	app_event_reg_isr(APP_EVENT_AD1_MEASURED, fsm_handle_adc_complete);
 }
 
 scheduling::task_control_block_t sensor_task(
@@ -70,9 +77,8 @@ bool fsm_execute() {
 
 	switch (fsm_state) {
 	case FSM_UNINITIALISED:
-		Term1_Cls();
-		Term1_MoveTo(1,1);
 		Term1_SendStr((void*)"sensor_fsm_coro_sched fsm initialisation\r\n");
+		fsm_reg_callbacks();
 		PIT_MCR |= 1; // set the freeze bit in PIT_MCR so timers are stopped in debug mode
 		fsm_transition(FSM_UNINITIALISED, FSM_WAIT_CALIBRATION);
 		if (AD1_Calibrate(false) == ERR_OK) {
