@@ -9,6 +9,10 @@
 
 namespace scheduling {
 
+/**
+ * task_control_block_t
+ */
+
 task_data_t task_control_block_t::getData() const {
 	return data;
 }
@@ -35,14 +39,25 @@ task_priority_t task_control_block_t::setPriority(task_priority_t newPriority) {
 }
 
 void task_control_block_t::run() {
-	taskfn(this);
+	if (resumable_.isempty()) {
+		resumable_ = taskfn(this);
+	}
+	else {
+		resumable_.resume();
+	}
 }
+
+/**
+ * idle_task
+ */
 
 void idle_task_fn(task_control_block_t*);
 
+resumable idle_task_fn2(task_control_block_t*);
+
 /* static */
 task_control_block_t scheduler::m_idle_task = task_control_block_t(
-	idle_task_fn,
+	idle_task_fn2,
 	0,
 	PRIORITY_LOWEST,
 	task_state_t::TASK_READY
@@ -51,6 +66,19 @@ task_control_block_t scheduler::m_idle_task = task_control_block_t(
 void idle_task_fn(task_control_block_t*) {
 	__asm("wfi");
 }
+
+resumable idle_task_fn2(task_control_block_t* t) {
+	co_await std::experimental::suspend_always { };
+	while (true) {
+		__asm("wfi");
+		//co_yield;
+		co_await std::experimental::suspend_always { };
+	}
+}
+
+/**
+ * scheduler
+ */
 
 scheduler::scheduler() : m_taskCount(0),
 			  m_taskMax(SCHEDULER_MAX_TASKS),
@@ -154,6 +182,18 @@ bool scheduler::hasAnyTasks() {
 	static scheduler theInstance;
 	return theInstance;
 }
+
+task_control_block_t* scheduler::activeTask() const {
+	return nullptr;
+}
+/* static */ task_control_block_t* scheduler::getActiveTask() {
+	return instance().activeTask();
+}
+
+/**
+ * ufuture
+ */
+
 
 
 }

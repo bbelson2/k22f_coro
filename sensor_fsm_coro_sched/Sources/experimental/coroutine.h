@@ -190,6 +190,14 @@ struct suspend_never {
   void await_suspend(coroutine_handle<>) {}
   void await_resume() {}
 };
+struct suspend_if {
+	bool ready;
+
+	explicit suspend_if(bool condition) noexcept : ready(!condition) {}
+	bool await_ready() noexcept { return ready; }
+	void await_suspend(coroutine_handle<>) noexcept {}
+	void await_resume() noexcept {}
+};
 
 }}}
 

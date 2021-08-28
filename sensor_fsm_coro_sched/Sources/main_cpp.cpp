@@ -13,8 +13,12 @@
 
 //#error - See http://andybrown.me.uk/2011/01/15/the-standard-template-library-stl-for-avr-with-c-streams/
 
+extern "C" int fut_test();
+
 extern "C"
 int main_cpp() {
+	int t = fut_test();
+
 	scheduling::scheduler::instance().registerTask(&sensor_task);
 	scheduling::scheduler::instance().run();
 	return 0;

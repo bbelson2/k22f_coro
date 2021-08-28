@@ -57,7 +57,7 @@ The various code blocks were included and excluded by a single control macro, `T
 
 ## Data
 
-TEST_CONTROL | Infrastructure | couroutines | callers | text | data | bss | dec | hex
+TEST_CONTROL | Infrastructure | coroutines | callers | text | data | bss | dec | hex
 --- | --- | --- | --- | --- | --- | --- | --- | --- 
 0 | 0 | 0 | 0 | 11100 | 140 | 1236 | 12476 | 30bc
 1 | 1 | 1 | 1 | 17348 | 144 | 1256 | 18748 | 493c
@@ -109,11 +109,11 @@ Invocation of coroutine | 12
 # Code size (Release build)
 
 Add a new build ReleaseLLVM, based on DebugLLVM, with:
-Properties > C/C++ Build > Settings > Tool Settings > Cross ARM C++ Compiler > Optimazation > Other optimazation flags => -Os
+Properties > C/C++ Build > Settings > Tool Settings > Cross ARM C++ Compiler > Optimization > Other optimization flags => -Os
 
 ## Data
 
-TEST_CONTROL | Infrastructure | couroutines | callers | text | data | bss | dec | hex
+TEST_CONTROL | Infrastructure | coroutines | callers | text | data | bss | dec | hex
 --- | --- | --- | --- | --- | --- | --- | --- | --- 
 0 | 0 | 0 | 0 | 10684 | 140 | 1236 | 12060 | 2f1c
 1 | 1 | 1 | 1 | 11564 | 144 | 1256 | 12964 | 32a4

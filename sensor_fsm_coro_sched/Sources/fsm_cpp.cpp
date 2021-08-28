@@ -19,8 +19,41 @@ extern "C" {
 #include <stdbool.h>
 #include "fsm.h"
 #include "app_events.h"
+#include "resumable.h"
+
+scheduling::ushared_state<bool>* calibrate_adc_state = nullptr;
+
+void calibrate_adc_callback() {
+	calibrate_adc_state->set(true);
+	app_event_unreg_isr(APP_EVENT_AD1_CALIBRATED, calibrate_adc_callback);
+}
+
+scheduling::ufuture<bool> calibrate_adc() {
+	// Set up asynchrony
+	scheduling::upromise<bool> promise;
+	scheduling::ufuture<bool> future = promise.get_future();
+	calibrate_adc_state = promise.get_state_for_set();
+	app_event_reg_isr(APP_EVENT_AD1_CALIBRATED, calibrate_adc_callback);
+
+	// Kick off task
+	byte rc = AD1_Calibrate(false);
+	if (rc != ERR_OK) {
+		// Fail now - clean up
+		app_event_unreg_isr(APP_EVENT_AD1_CALIBRATED, calibrate_adc_callback);
+		calibrate_adc_state = nullptr;
+		promise.set_error(rc);
+	}
+	return future;
+}
+
 
 // Scheduler task adapter
+
+scheduling::resumable sensor_taskfn2(scheduling::task_control_block_t* t) {
+	co_await std::experimental::suspend_always { };
+	//auto calib = co_await calibrate_adc();
+	//(void) co_await calibrate_adc();
+}
 
 void sensor_taskfn(scheduling::task_control_block_t* t) {
 	if (fsm_execute()) {
@@ -30,6 +63,7 @@ void sensor_taskfn(scheduling::task_control_block_t* t) {
 	else {
 		t->setState(scheduling::task_state_t::TASK_READY);
 	}
+	//co_await calibrate_adc();
 }
 
 extern "C" void fsm_reg_callbacks() {
@@ -39,7 +73,7 @@ extern "C" void fsm_reg_callbacks() {
 }
 
 scheduling::task_control_block_t sensor_task(
-	sensor_taskfn,
+		sensor_taskfn2,
 	(void*)0, scheduling::PRIORITY_NORMAL,
 	scheduling::task_state_t::TASK_READY);
 

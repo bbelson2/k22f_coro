@@ -19,6 +19,7 @@ extern "C" {
 #define STE std::experimental
 #include <cppcommon.h>
 #include <experimental/coroutine.h>
+#include <resumable.h>
 
 namespace scheduling {
 
@@ -32,43 +33,48 @@ enum ufuture_error_code {
 	future_already_retrieved,
 };
 
-template<class T, class E>
+template<class T>
 class ufuture;
 
-template<class T, class E>
+template<class T>
 class ushared_state
 {
 public:
-	ushared_state() : result_(T()), error_(E()), is_ready_(false), is_retrieved_(false), is_running_(false) { }
+	typedef byte error_code_t;
+public:
+	ushared_state() : result_(T()), error_(error_code_t()), is_ready_(false), is_retrieved_(false), is_running_(false) { }
 
 	bool is_ready() const { return is_ready_; }
 	bool is_retrieved() const { return is_retrieved_; }
 	bool is_running() const { return is_running_; }
 
 	const T& get() const { return result_; }
-	bool has_error() const { return error_ != E(); }
+	bool has_error() const { return error_ != error_code_t(); }
 
 	void set(T&& data) { result_ = data; }
 	void set(const T& data) { result_ = data; }
-	void set(T data) { result_ = data; }
 
-	void set_error(E&& error) { error_ = error; }
-	void set_error(const E& error) { error_ = error; }
-	void set_error(E error) { error_ = error; }
+	void set_error(error_code_t error) { error_ = error; }
+	void set_retrieved() { is_retrieved_ = true; }
 private:
 	T result_;
-	E error_;
+	error_code_t error_;
 	bool is_ready_;
 	bool is_retrieved_;
 	bool is_running_;
 };
 
-template<class T, class E>
+template<class T>
 class upromise
 {
 public:
-	upromise();
-	upromise(upromise&& rhs) noexcept;
+	typedef ushared_state<T> state_t;
+public:
+	upromise() : state_(nullptr) { }
+	upromise(upromise&& rhs) noexcept {
+		state_ = rhs.state_;
+		rhs.state_ = nullptr;
+	}
 	upromise(const upromise& rhs) = delete;
 
 	upromise& operator=(upromise&& rhs) noexcept;
@@ -76,7 +82,9 @@ public:
 	void swap(upromise& other) noexcept;
 
 
-	ufuture<T, E> get_future();
+	ufuture<T> get_future();// {
+//		return ufuture<T>(get_state_for_future());
+//	}
 	/*
 	ufuture<T, E> get_future() {
 		if (!state_) {
@@ -94,26 +102,90 @@ public:
 	}
 	*/
 
-	void set_value(const T& t) { get_state_for_set()->set_value(t); }
-	void set_value(T&& t) { get_state_for_set()->set_value(t); }
+	void set_value(const T& t) { get_state_for_set()->set(t); }
+	void set_value(T&& t) { get_state_for_set()->set(t); }
 
-	void set_error(E&& error);
-	void set_error(const E& error);
-	void set_error(E error);
+	void set_error(typename state_t::error_code_t error);
+public:
+	state_t* get_state_for_future() {
+		if (!state_) {
+			return get_state_for_error(state_t::error_code_t::no_state);
+		}
+		else {
+			if (state_->is_retrieved()) {
+				return get_state_for_error(state_t::error_code_t::future_already_retrieved);
+			}
+			else {
+				state_->set_retrieved();
+				return state_;
+			}
+		}
+	}
+	state_t* get_state_for_set();
 protected:
-	ushared_state<T, E>* get_state_for_future();
-	ushared_state<T, E>* get_state_for_set();
+	static state_t* get_state_for_error(typename state_t::error_code_t e) {
+		ushared_state<T>* t = new ushared_state<T>();
+		t->set_error(e);
+		return t;
+	}
 private:
-	ushared_state<T, E> *state_;
+	state_t *state_;
 };
 
-template<class T, class E>
+template<>
+class upromise<void>
+{
+public:
+	typedef ushared_state<int> state_t;
+public:
+	upromise();
+	upromise(upromise&& rhs) noexcept;
+	upromise(const upromise& rhs) = delete;
+
+	upromise& operator=(upromise&& rhs) noexcept;
+	upromise& operator=(const upromise& rhs) = delete;
+	void swap(upromise& other) noexcept;
+
+
+	ufuture<void> get_future();
+	/*
+	ufuture<T, E> get_future() {
+		if (!state_) {
+			// ISO contract says to throw no_state
+		}
+		else {
+			if (is_retrieved_) {
+				// ISO contract says to throw future_already_retrieved
+			}
+			else {
+				is_retrieved_ = true;
+				return ufuture<T, E>(get_state_for_future());
+			}
+		}
+	}
+	*/
+
+	void set_value() { get_state_for_set()->set((int)1); }
+
+	void set_error(typename state_t::error_code_t error);
+public:
+	state_t* get_state_for_future();
+	state_t* get_state_for_set();
+private:
+	state_t *state_;
+};
+
+template<class T>
 class ufuture
 {
+public:
+	typedef ushared_state<T> state_t;
 public:
 	ufuture() noexcept;
 	ufuture(ufuture&& rhs) noexcept;
 	ufuture(const ufuture& rhs) = delete;
+	ufuture(state_t* state) noexcept : state_(state) {
+	}
 	~ufuture();
 	ufuture& operator=(const ufuture& rhs) = delete;
 	ufuture& operator=(ufuture&&) noexcept;
@@ -127,8 +199,8 @@ public:
 
 	// Coroutine
 	struct promise_type {
-		ufuture<T, E> get_return_object() {
-			return ufuture<T, E>(
+		ufuture<T> get_return_object() {
+			return ufuture<T>(
 					STE::coroutine_handle < promise_type > ::from_promise(*this));
 		}
 		auto initial_suspend() {
@@ -141,8 +213,169 @@ public:
 		}
 		void unhandled_exception() {}
 	};
+
+	// Awaiter
+	bool await_ready() {
+		return (state_->is_ready());
+	}
+	void await_suspend(STE::coroutine_handle < promise_type > coro) {
+		  // TODO!!!!
+			/*
+			// change to .then when future gets .then
+			thread _WaitingThread([&f, _ResumeCb]{
+				f.wait();
+				_ResumeCb();
+			});
+			_WaitingThread.detach();
+			 */
+	}
+
+
+private:
+	state_t* state_;
 };
 
+template<>
+class ufuture<void>
+{
+public:
+	typedef ushared_state<int> state_t;
+public:
+	ufuture() noexcept;
+	ufuture(ufuture&& rhs) noexcept;
+	ufuture(const ufuture& rhs) = delete;
+	~ufuture();
+	ufuture& operator=(const ufuture& rhs) = delete;
+	ufuture& operator=(ufuture&&) noexcept;
+
+	void get();
+
+	bool valid();
+
+	void wait() const;
+	// timers TODO
+
+
+
+
+private:
+	//coroutine_handle<promise_type> _coroutine = nullptr;
+
+	/*
+	// Coroutine
+	struct promise_type {
+		ufuture<void> get_return_object() {
+			return ufuture<void>(
+					STE::coroutine_handle < promise_type > ::from_promise(*this));
+		}
+		auto initial_suspend() {
+			return STE::suspend_never { };
+		}
+		auto final_suspend() {
+			return STE::suspend_never { };
+		}
+		void return_void() {
+		}
+		void unhandled_exception() {}
+	};
+	*/
+};
+
+// Awaiter API
+
+#if 0
+template<class T>
+	bool await_ready(ufuture<T>& f)
+	{
+	return (f._Is_ready());
+	}
+
+template<class T>
+	void await_suspend(ufuture<T>& f,
+		std::experimental::coroutine_handle<> coro)
+	{
+	  // TODO!!!!
+		/*
+	// change to .then when future gets .then
+	thread _WaitingThread([&f, _ResumeCb]{
+		f.wait();
+		_ResumeCb();
+	});
+	_WaitingThread.detach();
+		 */
+	}
+
+template<class T>
+	auto await_resume(ufuture<T>& f)
+	{
+	return (f.get());
+	}
+#endif
+
+} // namespace scheduling
+
+namespace std { namespace experimental { inline namespace coroutines_v1 {
+template<class T,
+	class... ArgTypes>
+	struct coroutine_traits<scheduling::ufuture<T>, ArgTypes...>
+	{	// defines resumable traits for functions returning ufuture<T>
+		struct promise_type {
+			scheduling::upromise<T> promise_;
+
+			scheduling::ufuture<T> get_return_object() {
+				return (promise_.get_future());
+			}
+
+			bool initial_suspend() const {
+				return (false);
+			}
+
+			bool final_suspend() const {
+				return (false);
+			}
+
+			template<class _Ut>
+			void return_value(_Ut value) {
+				promise_.set_value(value);
+			}
+
+			void set_error(typename scheduling::ushared_state<T>::error_code_t e) {
+				promise_.set_error(e);
+			}
+		};
+	};
+
+template<class... ArgTypes>
+	struct coroutine_traits<scheduling::ufuture<void>, ArgTypes...>
+	{	// defines resumable traits for functions returning future<void>
+		struct promise_type {
+			scheduling::upromise<void> promise_;
+
+			scheduling::ufuture<void> get_return_object() {
+				return (promise_.get_future());
+			}
+
+			bool initial_suspend() const {
+				return (false);
+			}
+
+			bool final_suspend() const {
+				return (false);
+			}
+
+			void return_void() {
+				promise_.set_value();
+			}
+
+			void set_error(typename scheduling::ushared_state<int>::error_code_t e) {
+				promise_.set_error(e);
+			}
+		};
+	};
+
+}}}
+
+namespace scheduling {
 
 /**
  * Task primitive types
@@ -161,7 +394,8 @@ enum class task_state_t : unsigned char {
 
 typedef unsigned char task_priority_t;
 typedef void* task_data_t;
-typedef void taskfn_t(task_control_block_t*);
+//typedef void taskfn_t(task_control_block_t*);
+typedef resumable (*taskfn_t)(task_control_block_t*);
 
 const task_priority_t PRIORITY_LOWEST 	= 0x00;
 const task_priority_t PRIORITY_LOW 		= 0x10;
@@ -174,14 +408,15 @@ const task_priority_t PRIORITY_CRITICAL = 0xf0;
  */
 
 struct task_control_block_t {
-	taskfn_t 				*taskfn;
-	task_data_t 			data;
-	task_priority_t 		priority;
-	volatile task_state_t 	state;
+	taskfn_t							taskfn;
+	task_data_t 					data;
+	task_priority_t 			priority;
+	volatile task_state_t state;
+	resumable 						resumable_;
 
-	task_control_block_t(taskfn_t* taskfn_, task_data_t data_,
+	task_control_block_t(taskfn_t taskfn_, task_data_t data_,
 		task_priority_t priority_, task_state_t state_ = task_state_t::TASK_UNINITIALISED)
-	  : taskfn(taskfn_), data(data_), priority(priority_), state(state_)
+	  : resumable_(), taskfn(taskfn_), data(data_), priority(priority_), state(state_)
 	{
 	}
 
@@ -222,6 +457,8 @@ public:
 	bool registerTask(task_control_block_t* t);
 	int run();
 	static scheduler& instance();
+	task_control_block_t* activeTask() const;
+	static task_control_block_t* getActiveTask();
 protected:
 	uint8_t getNextTask() const;
 	bool hasAnyTasks();

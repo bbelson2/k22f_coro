@@ -106,13 +106,10 @@
       <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Generated_Code\Vectors_Config.h</PathName>
       <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\Events.h</PathName>
       <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\app_events.h</PathName>
-      <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\awaitable.h</PathName>
       <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\cppcommon.h</PathName>
       <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\crlib.h</PathName>
-      <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\experimental\coroutine.h</PathName>
       <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\fsm.h</PathName>
       <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\primitives.h</PathName>
-      <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\resumable.h</PathName>
       <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\scheduler.h</PathName>
       <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\stl_excluded\stdexcept.h</PathName>
       <PathName>E:\Source\repos\k22f_coro\sensor_fsm_sched\Sources\stl_excluded\stl_future.h</PathName>

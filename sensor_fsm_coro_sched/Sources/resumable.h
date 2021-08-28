@@ -10,7 +10,7 @@
 
 using namespace std::experimental;
 
-namespace std {
+namespace scheduling {
 
 struct resumable {
 	struct promise_type {
@@ -54,8 +54,9 @@ struct resumable {
 	void resume() {
 		_coroutine.resume();
 	}
+	bool isempty() const { return !(bool)_coroutine; }
 };
 
-} // std
+} // scheduling
 
 #endif /* SOURCES_RESUMABLE_H_ */
